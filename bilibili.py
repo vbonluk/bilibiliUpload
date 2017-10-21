@@ -144,11 +144,23 @@ class Bilibili:
                     ('version', (None, '1.0.1', None)),
                     ('md5', (None, utils.md5(chunks_data), None))
                 ]
-                r = self.session.post(url, files=file)
-                if re.search('504', r.text):
-                    chunks_index = 0
-                    f.seek(0, 0)
-                print(r.text, chunks_num, chunks_index)
+                try:
+                    r = self.session.post(url, files=file)
+
+                    if re.search('504', r.text):
+                        chunks_index = 0
+                        f.seek(0, 0)
+                    print(r.text, chunks_num, chunks_index)
+
+                    while not re.search('Successful', r.text):
+                        print(r.text)
+                        print('Chunk: %s丨Result: Failed丨Upload Again' % chunks_index)
+                        r = self.session.post(url, files=file)
+                except (BrokenPipeError, IOError):
+                    print('BrokenPipeError 错误')
+                    print('重新上传：%s'%(title))
+                    self.upload(filepath=filepath,title=title,tid=tid,tag=tag,desc=desc,source=source,cover=cover,no_reprint=no_reprint)
+                    return
 
         r = self.session.post(url_complete,
                               data={
